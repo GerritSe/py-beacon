@@ -125,7 +125,7 @@ def parse_events(sock, loop_count=100):
     sock.setsockopt( bluez.SOL_HCI, bluez.HCI_FILTER, flt )
     done = False
     results = []
-    myFullList = []
+    beacon_data = {}
     for i in range(0, loop_count):
         pkt = sock.recv(255)
         ptype, event, plen = struct.unpack("BBB", pkt[:3])
@@ -160,22 +160,11 @@ def parse_events(sock, loop_count=100):
 	
                     	rssi, = struct.unpack("b", pkt[report_pkt_offset -1])
                     	print "\tRSSI:", rssi
-		    # build the return string
-                    Adstring = packed_bdaddr_to_string(pkt[report_pkt_offset + 3:report_pkt_offset + 9])
-		    Adstring += ","
-		    Adstring += returnstringpacket(pkt[report_pkt_offset -22: report_pkt_offset - 6]) 
-		    Adstring += ","
-		    Adstring += "%i" % returnnumberpacket(pkt[report_pkt_offset -6: report_pkt_offset - 4]) 
-		    Adstring += ","
-		    Adstring += "%i" % returnnumberpacket(pkt[report_pkt_offset -4: report_pkt_offset - 2]) 
-		    Adstring += ","
-		    Adstring += "%i" % struct.unpack("b", pkt[report_pkt_offset -2])
-		    Adstring += ","
-		    Adstring += "%i" % struct.unpack("b", pkt[report_pkt_offset -1])
-
-		    #print "\tAdstring=", Adstring
- 		    myFullList.append(Adstring)
+		    # only MAC address and RSSI are important (for now)
+                    mac_address = packed_bdaddr_to_string(pkt[report_pkt_offset + 3:report_pkt_offset + 9])
+		    rssi = struct.unpack("b", pkt[report_pkt_offset -1])[0]
+		    beacon_data[mac_address] = rssi
                 done = True
     sock.setsockopt( bluez.SOL_HCI, bluez.HCI_FILTER, old_filter )
-    return myFullList
+    return beacon_data
 
